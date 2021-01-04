@@ -1,0 +1,95 @@
+---
+- name: change INPUT chain policy to ACCEPT
+  iptables:
+    chain: INPUT
+    policy: ACCEPT
+
+- name: accept RELATED and ESTABLISHED conntrack
+  iptables:
+    chain: INPUT
+    ctstate: ESTABLISHED,RELATED
+    jump: ACCEPT
+  notify: persist iptables rules
+
+- name: accept all requests from lo interface
+  iptables:
+    chain: INPUT
+    in_interface: lo
+    jump: ACCEPT
+  notify: persist iptables rules
+
+- name: drop invalid requests
+  iptables:
+    chain: INPUT
+    ctstate: INVALID
+    jump: DROP
+  notify: persist iptables rules
+
+- name: accept NEW conntrack for icmp requests
+  iptables:
+    chain: INPUT
+    protocol: icmp
+    icmp_type: '8'
+    ctstate: NEW
+    jump: ACCEPT
+  notify: persist iptables rules
+
+- name: create INPUT-OK chain
+  shell: iptables -n --list INPUT-OK >/dev/null 2>&1 || iptables -N INPUT-OK
+  notify: persist iptables rules
+
+- name: add INPUT-OK into INPUT chain
+  iptables:
+    action: append
+    chain: INPUT
+    jump: INPUT-OK
+  notify: persist iptables rules
+
+- name: add all ips to INPUT-OK as acceptable targets for ssh
+  iptables:
+    chain: INPUT-OK
+    destination_port: '{{ ansible_port | string }}'
+    protocol: tcp
+    ctstate: NEW
+    jump: ACCEPT
+  notify: persist iptables rules
+
+- name: change INPUT chain policy to DROP
+  iptables:
+    chain: INPUT
+    policy: DROP
+  notify: persist iptables rules
+
+- name: reject udp input requests with icmp-port-unreachable
+  iptables:
+    chain: INPUT
+    protocol: udp
+    jump: REJECT
+    reject_with: icmp-port-unreachable
+  notify: persist iptables rules
+
+- name: reject tcp input requests with tcp-reset
+  iptables:
+    chain: INPUT
+    protocol: tcp
+    jump: REJECT
+    reject_with: tcp-reset
+  notify: persist iptables rules
+
+- name: reject other protocols with icmp-proto-unreachable
+  iptables:
+    chain: INPUT
+    jump: REJECT
+    reject_with: icmp-proto-unreachable
+  notify: persist iptables rules
+
+- name: add ports and protocols to iptables as acceptable
+  iptables:
+    chain: INPUT-OK
+    source: '{{ item.source | default("0.0.0.0/0") }}'
+    destination_port: '{{ item.port }}'
+    protocol: '{{ item.protocol }}'
+    ctstate: NEW
+    jump: ACCEPT
+  with_items: '{{ iptables_rules }}'
+  notify: persist iptables rules

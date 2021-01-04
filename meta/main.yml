@@ -1,0 +1,24 @@
+---
+galaxy_info:
+  role_name: iptables
+  author: Hamid Yousefi
+  description: IPTables Rules Management
+  license: GPL-2.0-or-later
+  min_ansible_version: 2.8
+  platforms:
+    - name: Debian
+      versions:
+        - stretch
+        - buster
+    - name: Ubuntu
+      versions:
+        - xenial
+        - bionic
+        - focal
+  galaxy_tags:
+    - linux
+    - iptables
+    - security
+    - firewall
+    - network
+    - system
