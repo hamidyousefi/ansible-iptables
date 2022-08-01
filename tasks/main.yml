@@ -1,4 +1,12 @@
 ---
+- name: create necessary directories
+  file:
+    path: /etc/iptables
+    state: directory
+    owner: root
+    group: root
+    mode: '0644'
+
 - name: change INPUT chain policy to ACCEPT
   iptables:
     chain: INPUT
